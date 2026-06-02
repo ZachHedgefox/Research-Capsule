@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Pitch & Speed Player</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            text-align: center;
+            background-color: #1e1e1e;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            max-width: 640px;
+            width: 100%;
+        }
+
+        video {
+            width: 100%;
+            border-radius: 8px;
+            background-color: #000;
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            margin-top: 15px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .status {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <video id="myVideo" src="0223-1 (online-video-cutter.com).mp4" playsinline></video>
+    
+    <audio id="myAudio" src="0223-1.mp3"></audio>
+
+    <div class="controls">
+        <button id="playBtn">Play Random Speed</button>
+    </div>
+    
+    <div class="status" id="statusText">Press Play to randomize speed!</div>
+</div>
+
+<script>
+    const video = document.getElementById('myVideo');
+    const audio = document.getElementById('myAudio');
+    const playBtn = document.getElementById('playBtn');
+    const statusText = document.getElementById('statusText');
+
+    // Function to generate a random playback speed
+    // 0.5 is half speed, 1.0 is normal, 2.0 is double speed
+    function getRandomSpeed(min = 0.5, max = 2.0) {
+        return (Math.random() * (max - min) + min).toFixed(2);
+    }
+
+    function playRandomized() {
+        // 1. Pick a random speed rate
+        const randomSpeed = getRandomSpeed(0.5, 2.0);
+        
+        // 2. Set both elements to the exact same speed
+        video.playbackRate = parseFloat(randomSpeed);
+        audio.playbackRate = parseFloat(randomSpeed);
+        
+        // 3. Reset positions to the start for clean syncing
+        video.currentTime = 0;
+        audio.currentTime = 0;
+        
+        // 4. Play both simultaneously 
+        // Note: We unmute the video just in case, but rely on audio file for main sound
+        video.muted = true; // Kept muted so the external audio track takes priority without echoing
+        
+        Promise.all([video.play(), audio.play()])
+            .then(() => {
+                statusText.innerText = `Currently playing at ${Math.round(randomSpeed * 100)}% speed (Pitch shifted automatically)`;
+            })
+            .catch(error => {
+                statusText.innerText = "Error playing media. Ensure file paths are correct.";
+                console.error("Playback failed:", error);
+            });
+    }
+
+    // Trigger on button click to clear browser security restrictions
+    playBtn.addEventListener('click', playRandomized);
+
+    // Dynamic Synchronization Guard: 
+    // Constantly ensures audio and video don't drift apart over time
+    video.addEventListener('timeupdate', () => {
+        if (Math.abs(video.currentTime - audio.currentTime) > 0.1) {
+            audio.currentTime = video.currentTime;
+        }
+    });
+</script>
+
+</body>
+</html>
